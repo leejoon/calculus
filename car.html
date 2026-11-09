@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Speedometer and odometer: the big idea of calculus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F6F7F4;--ink:#1D2125;--muted:#596068;--line:#D6D9D2;--card:#FFFFFF;--asphalt:#25282D;--sign:#0E6B45;--speed:#13724A;--odo:#2F68A8;--lane:#B88A00;--area:rgba(19,114,74,.22);--code:#EEF0EB;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#15171A;--ink:#ECEDEA;--muted:#A6ABB1;--line:#353940;--card:#1E2125;--asphalt:#0E1012;--sign:#127A50;--speed:#45B783;--odo:#74A6E2;--lane:#F2C230;--area:rgba(69,183,131,.25);--code:#23272B;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#15171A;--ink:#ECEDEA;--muted:#A6ABB1;--line:#353940;--card:#1E2125;--asphalt:#0E1012;--sign:#127A50;--speed:#45B783;--odo:#74A6E2;--lane:#F2C230;--area:rgba(69,183,131,.25);--code:#23272B;color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--paper)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Overpass",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:1.125rem;line-height:1.6}
+img,svg{max-width:100%}
+.wrap{max-width:46rem;margin:0 auto;padding:0 1.25rem}
+a{color:var(--odo)}
+:focus-visible{outline:3px solid var(--lane);outline-offset:2px}
+
+.hero{background:#25282D;color:#F3F4F1;padding:2.5rem 0 2rem;position:relative}
+:root[data-theme="dark"] .hero{background:#0E1012}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(90deg,#F2C230 0 48px,transparent 48px 80px)}
+.hero h1{font-weight:800;font-size:clamp(2rem,6vw,3.1rem);line-height:1.05;letter-spacing:-.01em;margin:0 0 .75rem;max-width:18ch}
+.hero p.lede{margin:0 0 1.75rem;color:#C9CDD1;max-width:36rem}
+.dash{display:flex;flex-wrap:wrap;gap:1.5rem 2rem;align-items:center;background:#16181B;border-radius:22px;padding:1.25rem 1.5rem}
+.gauge{width:220px;flex:0 0 auto}
+.readouts{display:flex;flex-direction:column;gap:1rem;flex:1 1 220px}
+.ro-label{font-size:.9rem;color:#AEB3B8}
+.ro-speed{font-family:"Overpass Mono",ui-monospace,monospace;font-weight:700;font-size:2.4rem;line-height:1;color:#FFFFFF}
+.ro-speed small{font-size:1rem;color:#AEB3B8;font-weight:500}
+.odo{display:inline-flex;gap:3px;font-family:"Overpass Mono",ui-monospace,monospace;font-weight:700;font-size:1.9rem;line-height:1}
+.odo span{background:#000;color:#FFF;padding:.25rem .35rem;border-radius:4px;min-width:1.4em;text-align:center}
+.odo span.tenth{background:#C8102E}
+.odo-unit{font-size:1rem;color:#AEB3B8;margin-left:.4rem;align-self:flex-end}
+.controls{display:flex;align-items:center;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap}
+.controls label{color:#C9CDD1;font-size:1rem}
+.controls output{font-family:"Overpass Mono",monospace;font-weight:700;min-width:3.5ch;color:#FFF}
+input[type=range]{flex:1 1 200px;accent-color:#F2C230;height:28px}
+button{font:inherit;font-weight:600;font-size:1rem;cursor:pointer;border-radius:999px;border:0;padding:.55rem 1.2rem;background:#F2C230;color:#1D2125;min-height:44px}
+
+.graphs{padding:2rem 0 1rem}
+.graph-cap{font-weight:600;margin:1rem 0 .25rem}
+.graph-cap .key{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:.45rem;vertical-align:-1px}
+.graph-sub{color:var(--muted);margin:0 0 .25rem;font-size:1rem}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.5rem}
+.match{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem;margin:1rem 0 0}
+.match div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.75rem 1rem;font-size:1rem}
+.match b{font-family:"Overpass Mono",monospace;font-size:1.3rem;display:block}
+
+section{padding:2rem 0}
+h2{font-size:1.6rem;line-height:1.2;margin:0 0 1rem;font-weight:800}
+.exit{display:inline-flex;flex-direction:column;align-items:flex-start;margin:0 0 1rem}
+.exit .tab{background:var(--sign);color:#FFF;font-weight:800;font-size:.85rem;padding:.15rem .7rem;border-radius:8px 8px 0 0;margin-left:1rem}
+.exit h2{background:var(--sign);color:#FFF;border:3px solid #FFF;outline:2px solid var(--sign);border-radius:12px;padding:.55rem 1.1rem .4rem;margin:0;font-size:1.35rem}
+.bigidea{border-left:6px solid var(--lane);padding:.25rem 0 .25rem 1.1rem;margin:1.25rem 0}
+.bigidea p{margin:.4rem 0}
+.rule{font-size:1.35rem;font-weight:800;line-height:1.35}
+table{border-collapse:collapse;width:100%;font-size:1rem}
+.tbl{overflow-x:auto}
+th,td{text-align:left;padding:.6rem .75rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:800}
+td.num{font-family:"Overpass Mono",monospace}
+.ax{stroke:var(--muted);stroke-width:1}
+.tx{fill:var(--muted);font-family:"Overpass",system-ui,sans-serif;font-size:13px}
+.tb{fill:var(--ink);font-family:"Overpass",system-ui,sans-serif;font-size:15px;font-weight:800}
+.tm{fill:var(--ink);font-family:"Overpass",system-ui,sans-serif;font-size:14px}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:.75rem 1rem;margin:.6rem 0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:.5rem 0 0;color:var(--muted)}
+pre{background:var(--code);border-radius:12px;padding:1rem;overflow-x:auto;font-family:"Overpass Mono",ui-monospace,monospace;font-size:.95rem;line-height:1.5}
+footer{color:var(--muted);font-size:.95rem;padding:2rem 0 3rem;border-top:1px solid var(--line);margin-top:1rem}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Your car already knows calculus</h1>
+    <p class="lede">A car has two meters. The speedometer shows how fast you’re going right now. The odometer shows how far you’ve gone in total. Calculus is the math that turns one into the other. Press play and watch them together.</p>
+    <div class="dash" role="group" aria-label="Car dashboard">
+      <svg class="gauge" viewBox="0 0 220 140" role="img" aria-labelledby="gt">
+        <title id="gt">Speedometer from 0 to 80 miles per hour</title>
+        <path d="M30 120 A80 80 0 0 1 190 120" fill="none" stroke="#3A3E44" stroke-width="12" stroke-linecap="round"/>
+        <g id="ticks"></g>
+        <line id="needle" x1="110" y1="120" x2="40" y2="120" stroke="#F2C230" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="110" cy="120" r="7" fill="#F3F4F1"/>
+      </svg>
+      <div class="readouts">
+        <div>
+          <div class="ro-label">Speedometer</div>
+          <div class="ro-speed" aria-live="polite"><span id="spd">0</span> <small>mph</small></div>
+        </div>
+        <div>
+          <div class="ro-label">Odometer</div>
+          <div style="display:flex"><div class="odo" id="odo" aria-label="Odometer miles"></div><span class="odo-unit">miles</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="play" type="button">Play trip</button>
+      <label for="t">Minute</label>
+      <input type="range" id="t" min="0" max="60" step="0.5" value="20">
+      <output id="tout" for="t">20</output>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap graphs">
+    <p class="graph-cap"><span class="key" style="background:var(--speed)"></span>Speed graph</p>
+    <p class="graph-sub">The shaded area is the miles driven so far. It matches the odometer.</p>
+    <div class="chart">
+      <svg viewBox="0 0 680 200" role="img" aria-label="Speed over a 60 minute trip, with the area under the curve shaded up to the chosen minute">
+        <line class="ax" x1="50" y1="170" x2="660" y2="170"/><line class="ax" x1="50" y1="15" x2="50" y2="170"/>
+        <text class="tx" x="44" y="61" text-anchor="end">60</text><text class="tx" x="44" y="174" text-anchor="end">0</text>
+        <text class="tx" x="56" y="20">mph</text>
+        <polygon id="area" fill="var(--area)"/>
+        <path id="vcurve" fill="none" stroke="var(--speed)" stroke-width="3"/>
+        <line id="vline" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" y1="15" y2="170"/>
+        <circle id="vdot" r="6" fill="var(--speed)"/>
+        <text class="tx" x="355" y="192" text-anchor="middle">time (minutes)</text>
+      </svg>
+    </div>
+    <p class="graph-cap"><span class="key" style="background:var(--odo)"></span>Odometer graph</p>
+    <p class="graph-sub">The yellow line shows the slope (steepness) here. It matches the speedometer.</p>
+    <div class="chart">
+      <svg viewBox="0 0 680 200" role="img" aria-label="Odometer miles over a 60 minute trip, with a tangent line at the chosen minute">
+        <line class="ax" x1="50" y1="170" x2="660" y2="170"/><line class="ax" x1="50" y1="15" x2="50" y2="170"/>
+        <text class="tx" x="44" y="58" text-anchor="end">30</text><text class="tx" x="44" y="174" text-anchor="end">0</text>
+        <text class="tx" x="56" y="20">miles</text>
+        <path id="dcurve" fill="none" stroke="var(--odo)" stroke-width="3"/>
+        <line id="tan" stroke="var(--lane)" stroke-width="3.5" stroke-linecap="round"/>
+        <circle id="ddot" r="6" fill="var(--odo)"/>
+        <text class="tx" x="355" y="192" text-anchor="middle">time (minutes)</text>
+      </svg>
+    </div>
+    <div class="match">
+      <div>Area under the speed graph<b id="m-area">0.0 miles</b></div>
+      <div>Slope of the odometer graph<b id="m-slope">0 mph</b></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section aria-labelledby="idea">
+      <h2 id="idea">The big idea</h2>
+      <div class="bigidea">
+        <p class="rule">Speedometer → odometer: add up speed × time. On a graph, that’s the area.</p>
+        <p class="rule">Odometer → speedometer: see how fast the miles go up. On a graph, that’s the slope.</p>
+      </div>
+      <p>If you know your speed at every moment, you can figure out what the odometer says. If you know the odometer at every moment, you can figure out the speed. The three examples below show how.</p>
+    </section>
+
+    <section aria-labelledby="ex1">
+      <div class="exit"><span class="tab">Exit 1</span><h2 id="ex1">From speed to miles</h2></div>
+      <p>Mr. Lee drives for 4 hours. He goes 30 mph in the city for 1 hour, then 60 mph on the highway for 2 hours, then 20 mph in traffic for 1 hour. The odometer starts at 0. What does it say at the end?</p>
+      <p>Use the rule <b>distance = speed × time</b>. On a speed graph, speed is the height and time is the width. So each piece of the trip is a rectangle, and its area is the miles.</p>
+      <div class="chart">
+        <svg viewBox="0 0 680 400" role="img" aria-labelledby="s1t s1d">
+          <title id="s1t">Speed graph for the 4-hour trip</title>
+          <desc id="s1d">Speed is 30 mph for hour 0 to 1, 60 mph for hours 1 to 3, and 20 mph for hours 3 to 4. The rectangle areas are 30, 120, and 20 miles.</desc>
+          <text class="tx" x="40" y="96">speed (mph)</text>
+          <rect x="80" y="210" width="130" height="90" fill="var(--area)" stroke="var(--speed)"/>
+          <rect x="210" y="120" width="260" height="180" fill="var(--area)" stroke="var(--speed)"/>
+          <rect x="470" y="240" width="130" height="60" fill="var(--area)" stroke="var(--speed)"/>
+          <line class="ax" x1="80" y1="300" x2="620" y2="300"/><line class="ax" x1="80" y1="110" x2="80" y2="300"/>
+          <text class="tx" x="70" y="244" text-anchor="end">20</text><text class="tx" x="70" y="184" text-anchor="end">40</text><text class="tx" x="70" y="124" text-anchor="end">60</text>
+          <text class="tb" x="145" y="254" text-anchor="middle">30 mi</text><text class="tx" x="145" y="274" text-anchor="middle">30 × 1</text>
+          <text class="tb" x="340" y="208" text-anchor="middle">120 mi</text><text class="tx" x="340" y="228" text-anchor="middle">60 × 2</text>
+          <text class="tb" x="535" y="276" text-anchor="middle">20 mi</text>
+          <text class="tx" x="145" y="200" text-anchor="middle">30 mph</text><text class="tx" x="340" y="110" text-anchor="middle">60 mph</text><text class="tx" x="535" y="230" text-anchor="middle">20 mph</text>
+          <text class="tx" x="80" y="320" text-anchor="middle">0</text><text class="tx" x="210" y="320" text-anchor="middle">1</text><text class="tx" x="340" y="320" text-anchor="middle">2</text><text class="tx" x="470" y="320" text-anchor="middle">3</text><text class="tx" x="600" y="320" text-anchor="middle">4</text>
+          <text class="tx" x="340" y="340" text-anchor="middle">time (hours)</text>
+          <text class="tb" x="40" y="376">Odometer:</text>
+          <text class="tm" x="160" y="376" text-anchor="middle">0 → 30</text><text class="tm" x="340" y="376" text-anchor="middle">30 → 150</text><text class="tm" x="535" y="376" text-anchor="middle">150 → 170</text>
+        </svg>
+      </div>
+      <p><b>Answer:</b> 30 + 120 + 20 = 170 miles. A tall rectangle (high speed) adds miles fast. A short one (low speed) adds miles slowly. When speed changes smoothly, we cut the area into many skinny rectangles and add them up. Adding up area under a rate graph is called an <b>integral</b>.</p>
+    </section>
+
+    <section aria-labelledby="ex2">
+      <div class="exit"><span class="tab">Exit 2</span><h2 id="ex2">From miles back to speed</h2></div>
+      <p>Now pretend the speedometer is broken. We only have the odometer. Here is the odometer graph for the same trip. Speed is how many miles the odometer goes up each hour:</p>
+      <p style="text-align:center;font-weight:800;font-size:1.25rem">speed = change in miles ÷ change in time</p>
+      <p>On a graph, that’s rise ÷ run, which is the slope.</p>
+      <div class="chart">
+        <svg viewBox="0 0 680 360" role="img" aria-labelledby="s2t s2d">
+          <title id="s2t">Odometer graph for the same trip</title>
+          <desc id="s2d">The odometer goes 0 to 30 miles in hour 1, 30 to 150 in hours 1 to 3, and 150 to 170 in hour 4. The slopes are 30, 60, and 20 mph. A triangle shows 120 miles divided by 2 hours equals 60 mph.</desc>
+          <text class="tx" x="40" y="70">odometer (miles)</text>
+          <line class="ax" x1="80" y1="300" x2="620" y2="300"/><line class="ax" x1="80" y1="80" x2="80" y2="300"/>
+          <text class="tx" x="70" y="244" text-anchor="end">50</text><text class="tx" x="70" y="184" text-anchor="end">100</text><text class="tx" x="70" y="124" text-anchor="end">150</text>
+          <line x1="210" y1="264" x2="470" y2="264" stroke="var(--lane)" stroke-width="2" stroke-dasharray="6 5"/>
+          <line x1="470" y1="264" x2="470" y2="120" stroke="var(--lane)" stroke-width="2" stroke-dasharray="6 5"/>
+          <polyline points="80,300 210,264 470,120 600,96" fill="none" stroke="var(--odo)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="80" cy="300" r="5" fill="var(--odo)"/><circle cx="210" cy="264" r="5" fill="var(--odo)"/><circle cx="470" cy="120" r="5" fill="var(--odo)"/><circle cx="600" cy="96" r="5" fill="var(--odo)"/>
+          <text class="tx" x="340" y="286" text-anchor="middle">run: 2 hours</text>
+          <text class="tx" x="480" y="196">rise: 120 miles</text>
+          <text class="tb" x="250" y="160" text-anchor="middle">120 ÷ 2 = 60 mph</text>
+          <text class="tx" x="120" y="262" text-anchor="middle">30 mph</text>
+          <text class="tx" x="560" y="80" text-anchor="middle">20 mph</text>
+          <text class="tx" x="80" y="320" text-anchor="middle">0</text><text class="tx" x="210" y="320" text-anchor="middle">1</text><text class="tx" x="340" y="320" text-anchor="middle">2</text><text class="tx" x="470" y="320" text-anchor="middle">3</text><text class="tx" x="600" y="320" text-anchor="middle">4</text>
+          <text class="tx" x="340" y="342" text-anchor="middle">time (hours)</text>
+        </svg>
+      </div>
+      <p>We get back the same speeds we started with: 30, 60, and 20 mph. A steep line means fast. A flat line means slow. A perfectly flat line means the car is parked.</p>
+    </section>
+
+    <section aria-labelledby="ex3">
+      <div class="exit"><span class="tab">Exit 3</span><h2 id="ex3">Speed at one moment</h2></div>
+      <p>Real cars speed up and slow down smoothly, so the odometer graph is a curve. How do we find the speed at exactly 2:00 pm? Zoom in and use a shorter and shorter time:</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Time window</th><th>Miles gained</th><th>Speed estimate</th></tr></thead>
+          <tbody>
+            <tr><td>2:00 to 2:30 (0.5 hour)</td><td class="num">27 mi</td><td class="num">54 mph</td></tr>
+            <tr><td>2:00 to 2:06 (0.1 hour)</td><td class="num">5.9 mi</td><td class="num">59 mph</td></tr>
+            <tr><td>2:00 to 2:01 (1/60 hour)</td><td class="num">1 mi</td><td class="num">60 mph</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>As the window gets smaller, the answer settles on one number: 60 mph. That’s the speed at that instant. On a graph, it’s the slope of a line that just touches the curve at that point, like the yellow line at the top of this page. Finding this slope is called a <b>derivative</b>.</p>
+    </section>
+
+    <section aria-labelledby="think">
+      <h2 id="think">Check your thinking</h2>
+      <p>Use the trip at the top of the page. Try each one, then open it to check.</p>
+      <details><summary>At minute 30 the speed is highest. What does the odometer graph look like there?</summary><p>It’s at its steepest. High speed means the miles go up fastest.</p></details>
+      <details><summary>At minutes 0 and 60 the speed is 0. What does the yellow line look like?</summary><p>It’s flat. The odometer isn’t changing, so the slope is 0.</p></details>
+      <details><summary>Can the odometer ever go down? Why or why not?</summary><p>No. Speed is never negative, so the area under the speed graph only grows.</p></details>
+      <details><summary>A car drives 45 mph for 2 hours. What does the odometer add?</summary><p>45 × 2 = 90 miles. That’s the area of a rectangle 2 wide and 45 tall.</p></details>
+      <details><summary>The odometer goes from 200 to 230 miles in half an hour. What was the average speed?</summary><p>30 ÷ 0.5 = 60 mph. That’s rise ÷ run.</p></details>
+    </section>
+
+    <section aria-labelledby="words">
+      <h2 id="words">Word bank</h2>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Word</th><th>Meaning</th><th>Car example</th></tr></thead>
+          <tbody>
+            <tr><td><b>Rate</b></td><td>How fast something changes</td><td>Speed in miles per hour</td></tr>
+            <tr><td><b>Total</b></td><td>Everything added up</td><td>Odometer miles</td></tr>
+            <tr><td><b>Slope</b></td><td>Steepness, rise ÷ run</td><td>How fast the miles go up</td></tr>
+            <tr><td><b>Area</b></td><td>Space under a graph</td><td>Speed × time = miles</td></tr>
+            <tr><td><b>Derivative</b></td><td>Total → rate</td><td>Odometer → speedometer</td></tr>
+            <tr><td><b>Integral</b></td><td>Rate → total</td><td>Speedometer → odometer</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="code">
+      <h2 id="code">How a computer does it</h2>
+      <p>A car’s computer doesn’t draw graphs. It checks the speed many times each second and keeps a running total. That loop is an integral, one skinny rectangle at a time.</p>
+<pre><code>let odometer = 0;          // miles
+const timeStep = 1 / 3600; // one second, in hours
+
+function everySecond(speed) {
+  odometer = odometer + speed * timeStep;  // add one rectangle
+}</code></pre>
+      <p>Going the other way is a derivative: take two odometer readings, subtract, and divide by the time between them.</p>
+<pre><code>function speedFrom(oldMiles, newMiles, hours) {
+  return (newMiles - oldMiles) / hours;  // rise ÷ run
+}</code></pre>
+    </section>
+
+    <footer>The speedometer is the slope of the odometer. The odometer is the area under the speedometer.</footer>
+  </div>
+</main>
+
+<script>
+(function(){
+  var v=function(t){return 60*Math.sin(Math.PI*t/60)};
+  var D=function(t){return (60/Math.PI)*(1-Math.cos(Math.PI*t/60))};
+  var X=function(t){return 50+t*10}, YS=function(s){return 170-s*150/80}, YD=function(d){return 170-d*150/40};
+  var $=function(id){return document.getElementById(id)};
+  var p1='',p2='';
+  for(var t=0;t<=60;t+=0.5){p1+=(t?'L':'M')+X(t)+' '+YS(v(t));p2+=(t?'L':'M')+X(t)+' '+YD(D(t));}
+  $('vcurve').setAttribute('d',p1);$('dcurve').setAttribute('d',p2);
+  var ticks='';
+  for(var k=0;k<=80;k+=10){var a=Math.PI*(1-k/80),c=Math.cos(a),s=Math.sin(a);
+    ticks+='<line x1="'+(110+66*c)+'" y1="'+(120-66*s)+'" x2="'+(110+74*c)+'" y2="'+(120-74*s)+'" stroke="#AEB3B8" stroke-width="2"/>';
+    if(k%20===0)ticks+='<text x="'+(110+52*c)+'" y="'+(124-52*s)+'" fill="#AEB3B8" font-size="12" font-family="Overpass,sans-serif" text-anchor="middle">'+k+'</text>';}
+  $('ticks').innerHTML=ticks;
+  var sl=$('t');
+  function odoDigits(d){var str=(Math.floor(d*10)/10).toFixed(1).replace('.','');while(str.length<5)str='0'+str;
+    var h='';for(var i=0;i<str.length;i++)h+='<span'+(i===str.length-1?' class="tenth"':'')+'>'+str[i]+'</span>';return h;}
+  function up(){
+    var t=+sl.value,s=v(t),d=D(t);
+    $('tout').textContent=t;
+    $('spd').textContent=Math.round(s);
+    $('odo').innerHTML=odoDigits(d);
+    $('odo').setAttribute('aria-label',d.toFixed(1)+' miles');
+    var a=Math.PI*(1-s/80);$('needle').setAttribute('x2',110+64*Math.cos(a));$('needle').setAttribute('y2',120-64*Math.sin(a));
+    var pts=X(0)+',170 ';for(var u=0;u<=t;u+=0.5)pts+=X(u)+','+YS(v(u))+' ';pts+=X(t)+','+YS(s)+' '+X(t)+',170';
+    $('area').setAttribute('points',pts);
+    $('vline').setAttribute('x1',X(t));$('vline').setAttribute('x2',X(t));
+    $('vdot').setAttribute('cx',X(t));$('vdot').setAttribute('cy',YS(s));
+    $('ddot').setAttribute('cx',X(t));$('ddot').setAttribute('cy',YD(d));
+    var m=s/60,h=8;
+    $('tan').setAttribute('x1',X(t-h));$('tan').setAttribute('y1',YD(d-m*h));$('tan').setAttribute('x2',X(t+h));$('tan').setAttribute('y2',YD(d+m*h));
+    $('m-area').textContent=d.toFixed(1)+' miles';
+    $('m-slope').textContent=Math.round(s)+' mph';
+  }
+  sl.addEventListener('input',up);up();
+  var timer=null,pb=$('play');
+  function stop(){clearInterval(timer);timer=null;pb.textContent='Play trip';}
+  pb.addEventListener('click',function(){
+    if(timer){stop();return;}
+    if(+sl.value>=60)sl.value=0;
+    pb.textContent='Pause';
+    timer=setInterval(function(){sl.value=Math.min(60,+sl.value+0.5);up();if(+sl.value>=60)stop();},70);
+  });
+})();
+</script>
+</body>
+</html>
